@@ -5,27 +5,36 @@ local RunService = game:GetService("RunService")
 local TeleportService = game:GetService("TeleportService")
 
 local plr = Players.LocalPlayer
-local char = plr.Character or plr.CharacterAdded:Wait()
 
--- REINJETAR APÓS TROCAR DE SERVER (5s)
+-- ESPERA O CHAR CORRETAMENTE (FIX DO BUG)
+local function getChar()
+	if plr.Character then return plr.Character end
+	return plr.CharacterAdded:Wait()
+end
+
+local char = getChar()
+
+-- REINJETAR APÓS TROCAR DE SERVER (5s) - LINK NOVO
 if queue_on_teleport then
 	queue_on_teleport([[
 		wait(5)
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/flickzzzzzzzzz/mushyo/main/mushok"))()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/flickzzzzzzzzz/rovibeslixo/main/rovibespodre"))()
 	]])
 end
 
 -- GUI
 local gui = Instance.new("ScreenGui")
+gui.Name = "CreditGui"
 gui.ResetOnSpawn = false
 gui.Parent = plr:WaitForChild("PlayerGui")
 
-local txt = Instance.new("TextLabel", gui)
+local txt = Instance.new("TextLabel")
+txt.Parent = gui
 txt.Size = UDim2.new(0,260,0,40)
 txt.Position = UDim2.new(0,10,0,10)
 txt.BackgroundTransparency = 0.3
-txt.BackgroundColor3 = Color3.new(0,0,0)
-txt.TextColor3 = Color3.new(1,1,1)
+txt.BackgroundColor3 = Color3.fromRGB(0,0,0)
+txt.TextColor3 = Color3.fromRGB(255,255,255)
 txt.TextScaled = true
 txt.Font = Enum.Font.GothamBold
 txt.Text = "MADE BY FLICKZ"
@@ -40,21 +49,20 @@ noclipConn = RunService.Stepped:Connect(function()
 	end
 end)
 
--- CHECK LIGHTS
+-- PROCURA LIGHTTEMPLATE
 local function getLights()
-	local lights = {}
-	if workspace:FindFirstChild("LightsLocal") then
-		for _,obj in pairs(workspace.LightsLocal:GetChildren()) do
-			if obj:IsA("Model") and obj.Name == "LightTemplate" then
-				table.insert(lights, obj)
-			end
+	local t = {}
+	for _,o in pairs(workspace:GetDescendants()) do
+		if o.Name == "LightTemplate" and o:IsA("Model") then
+			table.insert(t, o)
 		end
 	end
-	return lights
+	return t
 end
 
--- MAIN LOOP
+-- LOOP PRINCIPAL
 while true do
+	char = getChar() -- garante char válido após reinjetar
 	local lights = getLights()
 
 	if #lights == 0 then
@@ -65,9 +73,7 @@ while true do
 	end
 
 	for _,light in ipairs(lights) do
-		if light and light.PrimaryPart then
-			char:PivotTo(light:GetPivot() + Vector3.new(0,3,0))
-			task.wait(0.5) -- delay entre TPs
-		end
+		char:PivotTo(light:GetPivot() + Vector3.new(0,3,0))
+		task.wait(0.5) -- DELAY ENTRE TPs
 	end
 end
