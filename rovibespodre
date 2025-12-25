@@ -5,16 +5,9 @@ local RunService = game:GetService("RunService")
 local TeleportService = game:GetService("TeleportService")
 
 local plr = Players.LocalPlayer
+local char = plr.Character or plr.CharacterAdded:Wait()
 
--- ESPERA O CHAR CORRETAMENTE (FIX DO BUG)
-local function getChar()
-	if plr.Character then return plr.Character end
-	return plr.CharacterAdded:Wait()
-end
-
-local char = getChar()
-
--- REINJETAR APÓS TROCAR DE SERVER (5s) - LINK NOVO
+-- REINJETAR APÓS TROCAR DE SERVER (5s)
 if queue_on_teleport then
 	queue_on_teleport([[
 		wait(5)
@@ -24,7 +17,6 @@ end
 
 -- GUI
 local gui = Instance.new("ScreenGui")
-gui.Name = "CreditGui"
 gui.ResetOnSpawn = false
 gui.Parent = plr:WaitForChild("PlayerGui")
 
@@ -33,8 +25,8 @@ txt.Parent = gui
 txt.Size = UDim2.new(0,260,0,40)
 txt.Position = UDim2.new(0,10,0,10)
 txt.BackgroundTransparency = 0.3
-txt.BackgroundColor3 = Color3.fromRGB(0,0,0)
-txt.TextColor3 = Color3.fromRGB(255,255,255)
+txt.BackgroundColor3 = Color3.new(0,0,0)
+txt.TextColor3 = Color3.new(1,1,1)
 txt.TextScaled = true
 txt.Font = Enum.Font.GothamBold
 txt.Text = "MADE BY FLICKZ"
@@ -42,38 +34,47 @@ txt.Text = "MADE BY FLICKZ"
 -- NOCLIP
 local noclipConn
 noclipConn = RunService.Stepped:Connect(function()
-	for _,v in pairs(char:GetDescendants()) do
+	for _,v in ipairs(char:GetDescendants()) do
 		if v:IsA("BasePart") then
 			v.CanCollide = false
 		end
 	end
 end)
 
--- PROCURA LIGHTTEMPLATE
+-- procura LightTemplate
 local function getLights()
 	local t = {}
-	for _,o in pairs(workspace:GetDescendants()) do
-		if o.Name == "LightTemplate" and o:IsA("Model") then
+	for _,o in ipairs(workspace:GetDescendants()) do
+		if o.Name == "LightTemplate" and o:IsA("BasePart") then
+			table.insert(t, o)
+		elseif o.Name == "LightTemplate" and o:IsA("Model") then
 			table.insert(t, o)
 		end
 	end
 	return t
 end
 
--- LOOP PRINCIPAL
+-- LOOP
 while true do
-	char = getChar() -- garante char válido após reinjetar
 	local lights = getLights()
 
+	-- se acabou, troca de server (server novo)
 	if #lights == 0 then
 		if noclipConn then noclipConn:Disconnect() end
 		task.wait(1)
-		TeleportService:Teleport(game.PlaceId, plr)
+
+		-- força server diferente (privado)
+		local code = TeleportService:ReserveServer(game.PlaceId)
+		TeleportService:TeleportToPrivateServer(game.PlaceId, code, {plr})
 		break
 	end
 
-	for _,light in ipairs(lights) do
-		char:PivotTo(light:GetPivot() + Vector3.new(0,3,0))
-		task.wait(0.5) -- DELAY ENTRE TPs
+	for _,obj in ipairs(lights) do
+		if obj:IsA("Model") then
+			char:PivotTo(obj:GetPivot() + Vector3.new(0,3,0))
+		else
+			char:PivotTo(obj.CFrame + Vector3.new(0,3,0))
+		end
+		task.wait(0.5) -- delay entre TPs
 	end
 end
